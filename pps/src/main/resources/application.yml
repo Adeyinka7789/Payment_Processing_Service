@@ -1,0 +1,46 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: pps
+  profiles:
+    active: prod
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ppsdb}
+    username: ${DB_USERNAME:ppsuser}
+    password: ${DB_PASSWORD:ppspass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+      jdbc:
+        batch_size: 20
+      order_inserts: true
+    show-sql: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: pps-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+logging:
+  level:
+    org.springframework.web: DEBUG
+    com.example.pps: DEBUG
+    org.apache.kafka: DEBUG
+  file:
+    name: ~/Documents/SpringBoot_Projects/Simple_Payment_Processing/pps/logs/app.log
+
+server:
+  port: 8080
+
+paystack:
+  secret-key: ${PAYSTACK_SECRET_KEY:mock-paystack-key}
+flutterwave:
+  secret-key: ${FLUTTERWAVE_SECRET_KEY:mock-flutterwave-key}
+merchant:
+  api-key: ${MERCHANT_API_KEY:merchant123_api_secret}
