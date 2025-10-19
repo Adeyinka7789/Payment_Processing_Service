@@ -8,7 +8,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "transactions")
 @Data
-public class Transaction {
+public class Transaction extends BaseEntity {
     @Id
     @GeneratedValue
     @Column(name = "id", updatable = false, nullable = false)

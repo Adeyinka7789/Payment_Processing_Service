@@ -10,7 +10,7 @@ import java.util.UUID;
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"transaction_id", "paymentGateway"})
         })
-public class WebhookEvent {
+public class WebhookEvent extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

@@ -5,7 +5,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "merchants")
-public class Merchant {
+public class Merchant extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
