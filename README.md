@@ -207,3 +207,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 Inspired by the need for robust payment solutions in the Nigerian market.
 Built with love using the Spring ecosystem and community support.
+
+Contact me: Dotunm95@gmail.com
++2347030834157
