@@ -1,5 +1,5 @@
-# Payment_Processing_Service
-Simple Payment Processing Service (PPS) - Spring Boot 3.x
+# Payment Processing Service
+Payment Processing Service (PPS) - Spring Boot 3.x
 Welcome to the Simple Payment Processing Service (PPS), a mission-critical backend application built with Java 17 and Spring Boot 3.x. This project serves as a secure, insulating middleware layer, enabling internal merchant applications to initiate and manage financial transactions seamlessly without tight coupling to specific Nigerian Payment Gateways (e.g., Paystack or Flutterwave). Designed with scalability and resilience in mind, PPS is an outstanding solution for modern payment processing needs.
 
 🚀 Project Overview & Value Proposition
