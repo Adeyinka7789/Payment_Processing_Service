@@ -30,6 +30,10 @@ This structure ensures separation of concerns and paves the way for future micro
 
 <img width="1879" height="814" alt="image" src="https://github.com/user-attachments/assets/655837a0-9506-4768-a547-7831501c9ff9" />
 <img width="1858" height="829" alt="image" src="https://github.com/user-attachments/assets/1e4fb901-fb81-48bc-bc34-de5bbdad1044" />
+<img width="1899" height="750" alt="image" src="https://github.com/user-attachments/assets/a687b4ba-7a62-4cb4-95e1-819b972fa216" />
+<img width="1888" height="838" alt="image" src="https://github.com/user-attachments/assets/da533744-de8d-4a00-a796-b8fb252a92ea" />
+
+
 
 
 
