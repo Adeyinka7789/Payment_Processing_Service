@@ -15,7 +15,7 @@ public class WebhookEvent extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT") // Set columnDefinition for potentially large payloads
     private String payload;
 
     @Enumerated(EnumType.STRING)
@@ -45,8 +45,14 @@ public class WebhookEvent extends BaseEntity {
     public Transaction getTransaction() { return transaction; }
     public void setTransaction(Transaction transaction) { this.transaction = transaction; }
 
+    /**
+     * Set the receivedAt field before persisting.
+     * Note: createdAt and updatedAt are handled by BaseEntity.
+     */
     @PrePersist
-    protected void onCreate() {
-        receivedAt = Instant.now();
+    protected void onPrePersist() {
+        if (receivedAt == null) {
+            receivedAt = Instant.now();
+        }
     }
 }

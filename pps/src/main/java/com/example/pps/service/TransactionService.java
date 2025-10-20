@@ -75,7 +75,8 @@ public class TransactionService {
                 return new InitiatePaymentResponse(
                         existing.getId(),
                         existing.getStatus().name(),
-                        authUrl
+                        authUrl,
+                        existing.getAmount() // Add amount for the new constructor
                 );
             }
         }

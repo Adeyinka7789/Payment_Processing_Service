@@ -36,4 +36,9 @@ public class TransactionController {
         logger.debug("Payment initiation response: {}", response);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/test")
+    public ResponseEntity<String> testEndpoint() {
+        return ResponseEntity.ok("✅ Transaction API is reachable and secured");
+    }
 }

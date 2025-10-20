@@ -4,8 +4,10 @@ import com.example.pps.security.ApiKeyAuthFilter;
 import com.example.pps.security.RateLimitFilter;
 import com.example.pps.security.WebhookSignatureFilter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,122 +30,74 @@ public class SecurityConfig {
     @Value("${redis.url:redis://localhost:6379}")
     private String redisUrl;
 
-    @Value("${paystack.secret.key}")
+    @Value("${paystack.secret-key:mock-paystack-key}")
     private String paystackSecretKey;
 
-    @Value("${allowed.origins:http://localhost:3000}")
+    @Value("${allowed.origins:http://localhost:3000,http://localhost:63342}")
     private String[] allowedOrigins;
 
-    private final RateLimitFilter rateLimitFilter;
-
-    public SecurityConfig(RateLimitFilter rateLimitFilter) {
-        this.rateLimitFilter = rateLimitFilter;
-    }
-
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitFilter redisRateLimitFilter) throws Exception {
         http
-                // CSRF: Disabled for stateless API (but ensure proper authentication)
                 .csrf(csrf -> csrf.disable())
-
-                // CORS: Use custom configuration
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // Session: Stateless for API
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // Security Headers
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(headers -> headers
-                        // Prevent clickjacking
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
-                        // Prevent MIME sniffing
                         .contentTypeOptions(Customizer.withDefaults())
-                        // XSS Protection (deprecated but functional)
                         .xssProtection(Customizer.withDefaults())
-                        // HSTS: Force HTTPS (enable in production)
                         .httpStrictTransportSecurity(hsts -> hsts
                                 .includeSubDomains(true)
                                 .maxAgeInSeconds(31536000))
-                        // Content Security Policy
-                        .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; frame-ancestors 'none'"))
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none'"))
                 )
-
-                // Authorization Rules
                 .authorizeHttpRequests(auth -> auth
-                        // Health check / actuator endpoints (adjust as needed)
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-
-                        // Webhook endpoints: Public but validated by signature filter
+                        .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/webhooks/**").permitAll()
-
-                        // Protected endpoints: Require API key authentication
                         .requestMatchers("/api/v1/transactions/**").authenticated()
                         .requestMatchers("/api/v1/merchants/**").authenticated()
-
-                        // Deny everything else
                         .anyRequest().denyAll()
                 )
 
-                // Filter Chain Order (CRITICAL for security):
-                // 1. Rate Limiting (before expensive operations)
-                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                // Webhook signature validation first
+                .addFilterBefore(new WebhookSignatureFilter(paystackSecretKey), UsernamePasswordAuthenticationFilter.class)
 
-                // 2. Webhook Signature Validation (for webhook endpoints only)
-                .addFilterBefore(
-                        new WebhookSignatureFilter(paystackSecretKey),
-                        UsernamePasswordAuthenticationFilter.class
-                )
+                // Redis-backed rate limiting second
+                .addFilterBefore(redisRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // 3. API Key Authentication (for protected endpoints)
-                .addFilterBefore(
-                        new ApiKeyAuthFilter("x-api-key"),
-                        UsernamePasswordAuthenticationFilter.class
-                );
+                // API Key authentication after rate limiting
+                .addFilterAfter(new ApiKeyAuthFilter("x-api-key"), RateLimitFilter.class);
 
         return http.build();
     }
 
-    /**
-     * CORS Configuration: Restrict origins in production
-     */
+    @Bean(name = "redisRateLimitFilter")
+    public RateLimitFilter redisRateLimitFilter() {
+        return new RateLimitFilter(redisUrl);
+    }
+
+    @Bean
+    public FilterRegistrationBean<WebhookSignatureFilter> webhookSignatureFilterRegistration() {
+        FilterRegistrationBean<WebhookSignatureFilter> registrationBean = new FilterRegistrationBean<>();
+        registrationBean.setFilter(new WebhookSignatureFilter(paystackSecretKey));
+        registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        registrationBean.addUrlPatterns("/api/v1/webhooks/*");
+        return registrationBean;
+    }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        // Allowed origins (use environment-specific values)
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
-
-        // Allowed methods
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-
-        // Allowed headers
-        configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "x-api-key",
-                "Idempotency-Key"
-        ));
-
-        // Expose headers (if client needs to read them)
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "x-api-key", "Idempotency-Key"));
         configuration.setExposedHeaders(List.of("X-Total-Count"));
-
-        // Don't allow credentials with wildcard origins
         configuration.setAllowCredentials(false);
-
-        // Cache preflight for 1 hour
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-
         return source;
-    }
-
-    @Bean
-    public RateLimitFilter rateLimitFilter() {
-        return new RateLimitFilter(redisUrl);
     }
 }

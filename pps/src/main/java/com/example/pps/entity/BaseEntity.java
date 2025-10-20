@@ -1,8 +1,15 @@
 package com.example.pps.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import java.time.Instant;
 
+/**
+ * Base entity class for common auditing fields.
+ * Uses Instant for database-agnostic UTC timestamps.
+ */
 @MappedSuperclass
 public abstract class BaseEntity {
 
@@ -14,21 +21,22 @@ public abstract class BaseEntity {
 
     @PrePersist
     protected void onCreate() {
+        // Use Instant.now() to ensure UTC timestamp is saved immediately before insertion
         Instant now = Instant.now();
-        this.createdAt = now;
-        this.updatedAt = now;
+        createdAt = now;
+        updatedAt = now;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = Instant.now();
+        // Update the timestamp whenever the entity is modified
+        updatedAt = Instant.now();
     }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
+    // Getters and Setters
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
+    public Instant getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }

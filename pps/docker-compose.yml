@@ -12,6 +12,14 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine # Using a lightweight Redis image
+    container_name: pps-redis
+    ports:
+      - "6379:6379" # Default Redis port
+    # It's often good practice to include a restart policy for cache/DB services
+    restart: always
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.1
     container_name: pps-zookeeper
@@ -29,8 +37,9 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # This allows your host and containers to both access Kafka
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://host.docker.internal:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1

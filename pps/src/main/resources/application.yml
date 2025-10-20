@@ -1,270 +1,53 @@
 spring:
   config:
     import: optional:file:.env[.properties]
-
   application:
-    name: Simple Payment Processing Service
-
+    name: pps
   profiles:
-    active: ${SPRING_PROFILE:prod}
-
-  # Database Configuration
+    active: prod
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:ppsdb}
     username: ${DB_USERNAME:ppsuser}
     password: ${DB_PASSWORD:ppspass}
     driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
-      leak-detection-threshold: 60000
-
-  # JPA/Hibernate Configuration
   jpa:
     hibernate:
-      ddl-auto: ${DDL_AUTO:validate}  # Use 'validate' in prod, 'update' in dev
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        jdbc:
-          batch_size: 20
-          fetch_size: 50
-        order_inserts: true
-        order_updates: true
-        format_sql: true
-        use_sql_comments: false
-    show-sql: ${SHOW_SQL:false}  # Disable in production
-    open-in-view: false  # Prevent lazy loading issues
-
-  # Kafka Configuration
+      ddl-auto: update
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+      jdbc:
+        batch_size: 20
+      order_inserts: true
+    show-sql: true
   kafka:
     bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      acks: all  # Wait for all replicas
-      retries: 3
-      properties:
-        max.in.flight.requests.per.connection: 1
-        enable.idempotence: true
     consumer:
       group-id: pps-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      auto-offset-reset: earliest
-      enable-auto-commit: false  # Manual commit for exactly-once semantics
-      properties:
-        spring.json.trusted.packages: com.example.pps.events
-    listener:
-      ack-mode: manual
-
-  # Redis Configuration
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: 60000
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 2
-          max-wait: -1ms
-        shutdown-timeout: 100ms
-
-  # Jackson Configuration (JSON serialization)
-  jackson:
-    default-property-inclusion: non_null
-    serialization:
-      write-dates-as-timestamps: false
-      fail-on-empty-beans: false
-    deserialization:
-      fail-on-unknown-properties: false
-    time-zone: Africa/Lagos
-
-# Server Configuration
-server:
-  port: ${SERVER_PORT:8080}
-  error:
-    include-message: always
-    include-binding-errors: never
-    include-stacktrace: never  # Never expose stack traces
-    include-exception: false
-  compression:
-    enabled: true
-    mime-types: application/json,application/xml,text/html,text/xml,text/plain
-  shutdown: graceful
-  tomcat:
-    max-connections: 10000
-    threads:
-      max: 200
-      min-spare: 10
-    connection-timeout: 20000
-    max-http-form-post-size: 2MB
-
-# Logging Configuration
-logging:
-  level:
-    root: INFO
-    org.springframework.web: ${WEB_LOG_LEVEL:INFO}
-    org.springframework.security: ${SECURITY_LOG_LEVEL:INFO}
-    com.example.pps: ${APP_LOG_LEVEL:INFO}
-    org.apache.kafka: ${KAFKA_LOG_LEVEL:WARN}
-    org.hibernate.SQL: ${SQL_LOG_LEVEL:WARN}
-    org.hibernate.type.descriptor.sql.BasicBinder: ${SQL_BIND_LOG_LEVEL:WARN}
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: ${LOG_FILE_PATH:./logs/pps.log}
-    max-size: 10MB
-    max-history: 30
-    total-size-cap: 1GB
-
-# Actuator Configuration (Monitoring)
-management:
-  endpoints:
-    web:
-      base-path: /actuator
-      exposure:
-        include: health,info,metrics,prometheus
-  endpoint:
-    health:
-      show-details: ${HEALTH_DETAILS:when-authorized}
-      probes:
-        enabled: true
-  health:
-    livenessstate:
-      enabled: true
-    readinessstate:
-      enabled: true
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-
-# Payment Gateway Configuration
-paystack:
-  secret-key: ${PAYSTACK_SECRET_KEY:}
-  api-url: ${PAYSTACK_API_URL:https://api.paystack.co}
-  timeout: 30000
-
-flutterwave:
-  secret-key: ${FLUTTERWAVE_SECRET_KEY:}
-  api-url: ${FLUTTERWAVE_API_URL:https://api.flutterwave.com/v3}
-  timeout: 30000
-
-# Merchant Configuration
-merchant:
-  api-key: ${MERCHANT_API_KEY:}
-
-# Security Configuration
-security:
-  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8081}
-  rate-limit:
-    enabled: true
-    requests-per-minute: ${RATE_LIMIT_REQUESTS:10}
-
-# Application-Specific Configuration
-app:
-  idempotency:
-    ttl-hours: 24
-  transaction:
-    timeout-minutes: 30
-  webhook:
-    max-retries: 3
-    retry-delay-seconds: 60
-
----
-# Development Profile
-spring:
-  config:
-    activate:
-      on-profile: dev
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-
-  kafka:
-    enabled: false  # Disable Kafka in dev if not needed
 
 logging:
   level:
     org.springframework.web: DEBUG
     com.example.pps: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.apache.kafka: DEBUG
+  file:
+    name: ~/Documents/SpringBoot_Projects/Simple_Payment_Processing/pps/logs/app.log
 
 server:
-  error:
-    include-stacktrace: on_param  # Allow stack traces with ?trace=true
+  port: 8080
 
-security:
-  allowed-origins: http://localhost:3000,http://localhost:8081,http://localhost:5173
-
----
-# Production Profile
-spring:
-  config:
-    activate:
-      on-profile: prod
-
-  jpa:
-    hibernate:
-      ddl-auto: validate  # Never auto-update in production
-    show-sql: false
-
-logging:
-  level:
-    root: WARN
-    com.example.pps: INFO
-    org.springframework.web: INFO
-
-server:
-  error:
-    include-stacktrace: never
-    include-message: always
-
-management:
-  endpoint:
-    health:
-      show-details: when-authorized
-
----
-# Test Profile
-spring:
-  config:
-    activate:
-      on-profile: test
-
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.H2Dialect
-
-  kafka:
-    enabled: false
-
-  data:
-    redis:
-      host: localhost
-      port: 6370  # Different port for test
-
-logging:
-  level:
-    root: WARN
-    com.example.pps: DEBUG
+paystack:
+  secret-key: ${PAYSTACK_SECRET_KEY:sk_test_190f8e659dbf5d9c46803b8238de99108a182de2}
+flutterwave:
+  secret-key: ${FLUTTERWAVE_SECRET_KEY:mock-flutterwave-key}
+merchant:
+  api-key: ${MERCHANT_API_KEY:merchant123_api_secret}
