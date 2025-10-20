@@ -46,7 +46,7 @@ server:
   port: 8080
 
 paystack:
-  secret-key: ${PAYSTACK_SECRET_KEY:sk_test_190f8e659dbf5d9c46803b8238de99108a182de2}
+  secret-key: ${PAYSTACK_SECRET_KEY:sk_test_key}
 flutterwave:
   secret-key: ${FLUTTERWAVE_SECRET_KEY:mock-flutterwave-key}
 merchant:
