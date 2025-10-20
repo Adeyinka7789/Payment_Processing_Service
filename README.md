@@ -28,6 +28,9 @@ Repository: Leverages Spring Data JPA for PostgreSQL persistence.
 
 This structure ensures separation of concerns and paves the way for future microservice evolution.
 
+<img width="1879" height="814" alt="image" src="https://github.com/user-attachments/assets/655837a0-9506-4768-a547-7831501c9ff9" />
+
+
 🛠️ Technology Stack
 
 
