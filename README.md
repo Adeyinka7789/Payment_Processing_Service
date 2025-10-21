@@ -20,30 +20,8 @@ Process: The service checks this key against the database. If a matching PENDING
 
 2. Layered Monolith Architecture
 PPS follows a clean, scalable architecture:
-                    ┌──────────────────────────────┐
-                    │         Paystack             │
-                    └──────────────┬───────────────┘
-                                   │ Webhook
-                    ┌──────────────▼───────────────┐
-                    │      Webhook Controller      │
-                    │  + Signature Validation      │
-                    └──────────────┬───────────────┘
-                                   │
-                         ┌─────────▼──────────┐
-                         │ TransactionService │
-                         │  + Updates Status  │
-                         │  + Saves Metadata  │
-                         └─────────┬──────────┘
-                                   │
-              ┌────────────────────▼──────────────────┐
-              │ Kafka Producer (merchant-notifications)│
-              │ Publishes merchant event asynchronously│
-              └────────────────────┬──────────────────┘
-                                   │
-                    ┌──────────────▼───────────────┐
-                    │ PostgreSQL (transactions)    │
-                    │ Redis (idempotency cache)    │
-                    └──────────────────────────────┘
+             <img width="663" height="666" alt="image" src="https://github.com/user-attachments/assets/418c088a-ecd1-4e80-b9c0-a6fcb929ba13" />
+
 
 Controller: Manages API routing, input validation, and security.
 Service: Houses core business logic, including idempotency and status transitions.
