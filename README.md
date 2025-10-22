@@ -842,10 +842,11 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 📞 Contact
 
-**Project Maintainer:** Adeniran Michael 
+**Project Maintainer:**
+Adeniran Michael 
 📧 Email: Dotunm95@gmail.com  
 📱 Phone: +234 703 083 4157  
-🐙 GitHub: [@your-username](https://github.com/Adeyinka7789)
+🐙 GitHub: [@Adeyinka7789](https://github.com/Adeyinka7789)
 
 ---
 
