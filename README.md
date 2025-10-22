@@ -60,29 +60,35 @@ PPS provides a **unified payment abstraction layer** that:
 | **Audit Trail** | Immutable webhook event logs for reconciliation |
 | **Status Tracking** | Real-time transaction status (PENDING → SUCCESS/FAILED) |
 
-### 🔌 **Gateway Abstraction**
+### 🔌 **Multi-Gateway Support**
 ```
 ┌──────────────────┐
 │ Merchant App A   │──┐
 └──────────────────┘  │
                       ├──▶ ┌─────────────┐     ┌──────────────┐
-┌──────────────────┐  │    │             │     │   Paystack   │
-│ Merchant App B   │──┼───▶│     PPS     │────▶│ Flutterwave  │
-└──────────────────┘  │    │   (Unified  │     │   Remita     │
-                      │    │    API)     │     │   Etc...     │
+┌──────────────────┐  │    │             │     │  ✅ Paystack │
+│ Merchant App B   │──┼───▶│     PPS     │────▶│  ✅ Flutterwave│
+└──────────────────┘  │    │   (Unified  │     │  🔧 Extensible│
+                      │    │    API)     │     │  for more... │
 ┌──────────────────┐  │    └─────────────┘     └──────────────┘
 │ Merchant App C   │──┘
 └──────────────────┘
 
-   Single Integration      Gateway Abstraction    Multiple Providers
+   Single Integration      Gateway Abstraction    Paystack + Flutterwave
 ```
 
+**Currently Integrated Gateways:**
+- ✅ **Paystack** - Full integration with card payments, transfers, USSD
+- ✅ **Flutterwave** - Complete implementation with all payment methods
+- 🔧 **Extensible Architecture** - Easy to add new gateways via `GatewayProvider` interface
+
 ### 🔔 **Async Webhook Processing**
-- ✅ Receives webhooks from payment gateways
+- ✅ Receives webhooks from **Paystack** and **Flutterwave**
 - ✅ Validates signatures for security
-- ✅ Processes updates asynchronously (Kafka/JMS)
+- ✅ Processes updates asynchronously via **Apache Kafka**
 - ✅ Notifies merchant apps reliably
 - ✅ Implements retry logic for failed notifications
+- ✅ **Redis caching** for idempotency keys and fast lookups
 
 ### ⚡ **Performance & Scalability**
 - **< 50ms** transaction initiation latency (excluding gateway)
@@ -208,8 +214,8 @@ PPS provides a **unified payment abstraction layer** that:
 | **Security** | Spring Security | API key authentication |
 | **Database** | PostgreSQL 15 | Primary data persistence |
 | **ORM** | Spring Data JPA (Hibernate) | Database abstraction layer |
-| **Messaging** | Apache Kafka / Spring Kafka | Async event processing |
-| **Caching** | Redis (Optional) | Idempotency key caching |
+| **Messaging** | Apache Kafka + Spring Kafka | Async webhook processing |
+| **Caching** | Redis | Idempotency keys & session data |
 | **Build** | Maven 3.9+ | Dependency management |
 | **Testing** | JUnit 5, Mockito, Testcontainers | Comprehensive test suite |
 | **Monitoring** | Spring Actuator, Prometheus | Health checks & metrics |
@@ -249,7 +255,12 @@ docker run --name pps-postgres \
   -p 5432:5432 \
   -d postgres:15-alpine
 
-# Start Kafka (Optional - for production)
+# Start Redis
+docker run --name pps-redis \
+  -p 6379:6379 \
+  -d redis:7-alpine
+
+# Start Kafka with Zookeeper
 docker-compose up -d kafka zookeeper
 ```
 
@@ -257,6 +268,11 @@ Verify containers are running:
 ```bash
 docker ps
 ```
+
+You should see:
+- `pps-postgres` (PostgreSQL on port 5432)
+- `pps-redis` (Redis on port 6379)
+- `kafka` and `zookeeper` containers
 
 #### **3️⃣ Configure Environment Variables**
 
@@ -275,8 +291,15 @@ FLUTTERWAVE_SECRET_KEY=FLWSECK_TEST-your_flutterwave_key_here
 # Merchant Authentication
 MERCHANT_API_KEY=merchant_api_key_for_basic_auth
 
-# Kafka Configuration (Production)
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+# Kafka Configuration
 KAFKA_BROKERS=localhost:9092
+KAFKA_TOPIC_WEBHOOK_EVENTS=pps.webhook.events
+KAFKA_TOPIC_MERCHANT_NOTIFICATIONS=pps.merchant.notifications
 
 # Webhook Configuration
 WEBHOOK_RETRY_MAX_ATTEMPTS=3
@@ -418,8 +441,9 @@ Authorization: Basic bWVyY2hhbnRfYXBpX2tleQ==
 
 ---
 
-### **3. Webhook Endpoint (External)**
+### **3. Webhook Endpoints (External)**
 
+#### **Paystack Webhook**
 **Endpoint:** `POST /api/webhooks/pg/paystack`
 
 **Purpose:** Receive real-time status updates from Paystack
@@ -441,7 +465,31 @@ Authorization: Basic bWVyY2hhbnRfYXBpX2tleQ==
 }
 ```
 
-**Response:**
+#### **Flutterwave Webhook**
+**Endpoint:** `POST /api/webhooks/pg/flutterwave`
+
+**Purpose:** Receive real-time status updates from Flutterwave
+
+**Security:** Validates `verif-hash` header
+
+**Flutterwave Webhook Payload:**
+```json
+{
+  "event": "charge.completed",
+  "data": {
+    "id": 12345,
+    "tx_ref": "hooli-tx-1920bbtyt",
+    "flw_ref": "FLW-MOCK-123456",
+    "amount": 15500,
+    "currency": "NGN",
+    "charged_amount": 15500,
+    "status": "successful",
+    "payment_type": "card"
+  }
+}
+```
+
+**Response (Both Gateways):**
 ```json
 {
   "status": "received",
@@ -719,16 +767,19 @@ docker run -d -p 8080:8080 \
 ### **Phase 1: Core Features** ✅
 - [x] Transaction initiation
 - [x] Idempotency handling
-- [x] Paystack integration
-- [x] Webhook processing
+- [x] **Paystack integration** (Complete)
+- [x] **Flutterwave integration** (Complete)
+- [x] **Kafka messaging** for async processing
+- [x] **Redis caching** for performance
+- [x] Webhook processing (Paystack + Flutterwave)
 - [x] Basic authentication
 
 ### **Phase 2: Enhanced Features** 🚧
-- [ ] Flutterwave gateway integration
-- [ ] Remita gateway integration
+- [ ] Additional gateway integration (Remita, etc.)
 - [ ] Admin dashboard (Spring Boot Admin)
 - [ ] Transaction reconciliation tools
-- [ ] Advanced retry mechanisms
+- [ ] Advanced retry mechanisms with dead-letter queue
+- [ ] Real-time monitoring dashboard
 
 ### **Phase 3: Enterprise Features** 📋
 - [ ] Multi-tenancy support
@@ -737,12 +788,14 @@ docker run -d -p 8080:8080 \
 - [ ] Dispute management
 - [ ] Analytics & reporting dashboard
 - [ ] GraphQL API
+- [ ] Webhook replay functionality
 
-### **Phase 4: Microservices** 🔮
+### **Phase 4: Microservices Evolution** 🔮
 - [ ] Extract webhook service
-- [ ] Separate gateway adapters
-- [ ] Event-driven architecture with Kafka
-- [ ] Service mesh integration
+- [ ] Separate gateway adapters as microservices
+- [ ] Enhanced event-driven architecture
+- [ ] Service mesh integration (Istio)
+- [ ] Distributed tracing (Jaeger)
 
 ---
 
