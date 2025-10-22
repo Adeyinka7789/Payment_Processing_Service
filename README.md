@@ -6,7 +6,7 @@
 [![Kafka](https://img.shields.io/badge/Apache%20Kafka-Latest-black?logo=apache-kafka)](https://kafka.apache.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Enterprise-grade payment middleware for seamless Nigerian payment gateway integration**
+> **Enterprise-grade payment middleware for seamless payment gateway integration**
 
 A mission-critical Spring Boot application serving as a secure abstraction layer between merchant applications and external payment gateways (Paystack, Flutterwave). Built with **transactional integrity**, **idempotency guarantees**, and **asynchronous webhook processing** at its core.
 
