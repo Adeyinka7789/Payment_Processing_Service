@@ -231,7 +231,8 @@ PPS provides a **unified payment abstraction layer** that:
 - ✅ **Maven 3.9+** ([Download Maven](https://maven.apache.org/download.cgi))
 - ✅ **Docker & Docker Compose** ([Get Docker](https://www.docker.com/get-started))
 - ✅ **PostgreSQL 15** (via Docker recommended)
-- ✅ **Kafka** (Optional - for production webhook processing)
+- ✅ **Kafka** (for production webhook processing)
+- ✅ **Redis** (for caching)
 
 ---
 
